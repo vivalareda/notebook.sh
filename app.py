@@ -26,7 +26,7 @@ def health():
     return jsonify({"status": "ok"})
 
 
-@app.route("refresh_data", methods=["POST"])
+@app.route("/refresh_data", methods=["POST"])
 def bulk_load():
     try:
 
@@ -146,4 +146,3 @@ def check_health():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
-
