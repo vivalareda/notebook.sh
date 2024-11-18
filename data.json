@@ -1,0 +1,31 @@
+{
+  "commands": [
+    {
+      "id": 1,
+      "subject": "docker",
+      "description": "stop container",
+      "steps": [
+        {
+          "description": "List all running containers to find the container ID or name",
+          "command": "docker ps"
+        },
+        {
+          "description": "Stop the container using its ID or name",
+          "command": "docker stop <container_id>"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "subject": "linux",
+      "description": "check disk space",
+      "command": "df -h"
+    },
+    {
+      "id": 3,
+      "subject": "docker",
+      "description": "list all running containers",
+      "command": "docker ps"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "synonyms": {
+    "list": ["show", "view", "display", "get", "see", "find"],
+    "remove": ["delete", "erase", "clear", "prune", "destroy"],
+    "running": ["active", "executing", "live", "working", "current"],
+    "local": ["available", "stored", "saved", "existing"],
+    "container": ["instance", "app", "image_instance", "containers", "docker"],
+    "image": ["template", "snapshot", "images", "base"],
+    "inspect": ["view_details", "check", "examine", "analyze", "show details"],
+    "logs": ["output", "history", "events", "log", "messages"],
+    "prune": ["clear", "clean", "purge", "cleanup"],
+    "build": ["construct", "create", "generate", "make"],
+    "save": ["archive", "backup", "export", "store"],
+    "load": ["import", "restore", "bring in"],
+    "tag": ["label", "version", "mark"],
+    "push": ["upload", "publish", "send"],
+    "pull": ["download", "fetch", "retrieve", "get"],
+    "start": ["run", "launch", "initiate", "begin", "spin up"],
+    "stop": ["halt", "terminate", "kill", "shutdown", "end"],
+    "pause": ["freeze", "suspend", "hold", "wait"],
+    "unpause": ["resume", "restart", "continue", "unfreeze"],
+    "scale": ["resize", "adjust", "configure", "change size"],
+    "create": ["initialize", "make", "generate", "new"],
+    "view_details": ["inspect", "check", "analyze", "information"],
+    "disk": ["storage", "drive", "space", "memory", "capacity"],
+    "check": ["verify", "monitor", "look at", "examine"],
+    "space": ["storage", "capacity", "room", "available space"],
+    "usage": ["utilization", "consumption", "used space"],
+    "find": ["locate", "search", "look for", "get"],
+    "id": ["identifier", "name", "number", "hash"],
+    "all": ["every", "all the", "each", "-a"]
+  }
+}

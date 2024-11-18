@@ -89,14 +89,22 @@ def search(subject, query):
             {
                 "filter": f"subject = '{subject}'",
                 "limit": 5,
-                "attributesToRetrieve": ["command", "description", "subject"],
+                "attributesToRetrieve": ["command", "description", "subject", "steps"],
             },
         )
         print(f"Search result: {res}")
 
         hits = res.get("hits", [])
         if hits:
-            return hits[0]["command"], 200
+            command = hits[0]
+            if "step" in command:
+                response = ""
+                for i, step in enumerate(command["steps"], 1):
+                    response += f"Step {i}: {step['description']}\n"
+                    response += f"$ {step['command']}\n\n"
+                return response.strip(), 200
+            else:
+                return hits[0]["command"], 200
         else:
             return "No command found", 404
     except Exception as e:
