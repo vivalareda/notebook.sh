@@ -97,7 +97,7 @@ def search(subject, query):
         hits = res.get("hits", [])
         if hits:
             command = hits[0]
-            if "step" in command:
+            if "steps" in command:
                 response = ""
                 for i, step in enumerate(command["steps"], 1):
                     response += f"Step {i}: {step['description']}\n"
