@@ -1,6 +1,11 @@
+variable "meilisearch_host" {}
+variable "meilisearch_api_key" {}
+variable "google_credentials" {}
+variable "google_project" {}
+
 provider "google" {
-  credentials = file("<PATH_TO_YOUR_SERVICE_ACCOUNT_KEY>.json")
-  project     = "<YOUR_PROJECT_ID>"
+  credentials = file(var.google_credentials)
+  project     = var.google_project
   region      = "us-central1"
   zone        = "us-central1-a"
 }
@@ -10,10 +15,10 @@ resource "google_compute_address" "new_static_ip" {
 }
 
 resource "google_compute_instance" "new_flask_server" {
-  tags = ["http-server"]
   name         = "new-flask-server"
   machine_type = "e2-micro"
   zone         = "us-central1-a"
+  tags         = ["http-server"]
 
   boot_disk {
     initialize_params {
@@ -29,38 +34,59 @@ resource "google_compute_instance" "new_flask_server" {
   }
 
   metadata = {
-    MEILISEARCH_HOST     = var.meilisearch_host
-    MEILISEARCH_API_KEY  = var.meilisearch_api_key
+    MEILISEARCH_HOST       = var.meilisearch_host
+    MEILISEARCH_MASTER_KEY = var.meilisearch_api_key
   }
 
   metadata_startup_script = <<-EOF
     #!/bin/bash
+    set -x
 
-    # Update and install packages
-    apt-get update
-    apt-get install -y python3 python3-pip git curl
-    pip3 install flask gunicorn
+    # Fetch metadata
+    MEILISEARCH_MASTER_KEY=$(curl -s -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/attributes/MEILISEARCH_MASTER_KEY || echo "missing")
+    MEILISEARCH_HOST=$(curl -s -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/instance/attributes/MEILISEARCH_HOST || echo "missing")
 
-    # Set env varibles
-    export MEILISEARCH_MASTER_KEY="${MEILISEARCH_MASTER_KEY}"
-    export MEILISEARCH_HOST="${MEILISEARCH_HOST}"
+    # Check if values were fetched
+    if [[ "$MEILISEARCH_MASTER_KEY" == "missing" || "$MEILISEARCH_HOST" == "missing" ]]; then
+      echo "Failed to fetch metadata attributes" >> /var/log/startup-script.log
+      exit 1
+    fi
 
-    # Setup and start meilisearch
+    # Persist variables globally
+    echo "MEILISEARCH_MASTER_KEY=$MEILISEARCH_MASTER_KEY" | sudo tee -a /etc/environment >> /var/log/startup-script.log
+    echo "MEILISEARCH_HOST=$MEILISEARCH_HOST" | sudo tee -a /etc/environment >> /var/log/startup-script.log
+
+    # Reload environment variables
+    source /etc/environment >> /var/log/startup-script.log
+
+    # Log final environment variables for debugging
+    env | grep MEILISEARCH >> /var/log/startup-script.log
+
+    # Setup and start Meilisearch
     curl -L https://install.meilisearch.com | sh
-    nohup ./meilisearch --master-key=$MEILISEARCH_MASTER_KEY &
+    nohup ./meilisearch --master-key=$MEILISEARCH_MASTER_KEY > /var/log/meilisearch.log 2>&1 &
 
-    # Setup and start web server
-    git clone https://github.com/vivalareda/notebook.sh.git
-    cd notebook.sh
+    # Log that Meilisearch was started
+    echo "Meilisearch started with master key $MEILISEARCH_MASTER_KEY" >> /var/log/startup-script.log
+
+    # Clone the application and start Gunicorn
+    mkdir -p /home/flaskapp
+    chown -R $(whoami):$(whoami) /home/flaskapp
+
+    if ! git clone https://github.com/vivalareda/notebook.sh.git /home/flaskapp/notebook.sh; then
+        echo "Failed to clone repository" >> /var/log/startup-script.log
+        exit 1
+    fi
+
+    cd /home/flaskapp/notebook.sh
     pip install -r requirements.txt
-    gunicorn --env -w 4 -b 0.0.0.0:5000 app:app
-
+    sudo -E nohup gunicorn -w 4 -b 0.0.0.0:80 app:app --log-file /var/log/gunicorn.log --log-level debug 2>&1 &
 
   EOF
 }
 
-resource "google_compute_firewall" "allow_http_new" {
-  name    = "allow-http-traffic-new"
+resource "google_compute_firewall" "allow_http_traffic" {
+  name    = "allow-http-traffic"
   network = "default"
 
   allow {
@@ -71,22 +97,10 @@ resource "google_compute_firewall" "allow_http_new" {
   source_ranges = ["0.0.0.0/0"]
 }
 
-resource "google_dns_managed_zone" "new_dns_zone" {
-  name        = "reda.sh"
-  dns_name    = "reda.sh"
-  description = "Managed DNS zone for the new Flask app"
+output "instance_name" {
+  value = google_compute_instance.new_flask_server.name
 }
 
-resource "google_dns_record_set" "new_a_record" {
-  name         = "reda.sh"
-  managed_zone = google_dns_managed_zone.new_dns_zone.name
-  type         = "A"
-  ttl          = 300
-
-  rrdatas = [
-    google_compute_address.new_static_ip.address
-  ]
+output "static_ip" {
+  value = google_compute_address.new_static_ip.address
 }
-
-variable "meilisearch_host" {}
-variable "meilisearch_api_key" {}
