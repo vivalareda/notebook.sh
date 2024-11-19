@@ -12,6 +12,7 @@ meili_host = os.getenv("MEILISEARCH_HOST")
 meili_master_key = os.getenv("MEILISEARCH_MASTER_KEY")
 
 if not meili_master_key:
+    meili_master_key = "testkey123"
     raise Exception("Meilisearch env variables not set")
 
 if not meili_host:
@@ -29,7 +30,6 @@ def health():
 @app.route("/refresh_data", methods=["POST"])
 def bulk_load():
     try:
-
         with open("data.json", "r") as f:
             data = json.load(f)
 
@@ -80,35 +80,46 @@ def refresh_synonyms():
 
 @app.route("/<string:subject>/<string:query>", methods=["GET"])
 def search(subject, query):
+    """Search for single commands in command index"""
     query = query.replace("+", " ")
     print(f"Searching for: {query} in subject: {subject}")
 
     try:
         res = client.index("commands").search(
+            query, {"filter": f"subject = '{subject}'", "limit": 1}
+        )
+        hits = res.get("hits", [])
+        if hits:
+            return hits[0]["command"], 200
+        return "No command found", 404
+
+    except Exception as e:
+        print(f"Search error: {e}")
+        return str(e), 500
+
+
+@app.route("/guide/<string:subject>/<string:query>", methods=["GET"])
+def search_guide(subject, query):
+    query = query.replace("+", " ")
+    try:
+        res = client.index("guides").search(
             query,
             {
                 "filter": f"subject = '{subject}'",
-                "limit": 5,
-                "attributesToRetrieve": ["command", "description", "subject", "steps"],
+                "attributesToRetrieve": ["title", "description", "steps"],
             },
         )
-        print(f"Search result: {res}")
-
         hits = res.get("hits", [])
         if hits:
-            command = hits[0]
-            if "steps" in command:
-                response = ""
-                for i, step in enumerate(command["steps"], 1):
-                    response += f"Step {i}: {step['description']}\n"
-                    response += f"$ {step['command']}\n\n"
-                return response.strip(), 200
-            else:
-                return hits[0]["command"], 200
-        else:
-            return "No command found", 404
+            guide = hits[0]
+            response = f"{guide['title']}\n\n"
+            for i, step in enumerate(guide["steps"], 1):
+                response += f"Step {i}: {step['description']}\n"
+                response += f"$ {step['command']}\n\n"
+            return response.strip(), 200
+        return "No guide found", 404
     except Exception as e:
-        print(f"Search error: {e}")
+        print(f"Guide search error: {e}")
         return str(e), 500
 
 
