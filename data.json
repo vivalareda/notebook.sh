@@ -1,9 +1,40 @@
 {
   "commands": [
     {
-      "id": 1,
+      "subject": "linux",
+      "description": "check disk space",
+      "command": "df -h"
+    },
+    {
       "subject": "docker",
-      "description": "stop container",
+      "description": "list all running containers",
+      "command": "docker ps"
+    },
+    {
+      "subject": "git",
+      "description": "delete a local branch",
+      "command": "git branch -D <branch_name>"
+    },
+    {
+      "subject": "git",
+      "description": "delete a remote branch",
+      "command": "git push origin --delete <branch_name>"
+    },
+    {
+      "subject": "git",
+      "description": "undo last commit",
+      "command": "git reset --hard HEAD~n"
+    },
+    {
+      "subject": "git",
+      "description": "undo last commit without losing changes",
+      "command": "git reset --soft HEAD~n"
+    }
+  ],
+  "guides": [
+    {
+      "subject": "docker",
+      "description": "stop running container",
       "steps": [
         {
           "description": "List all running containers to find the container ID or name",
@@ -16,16 +47,18 @@
       ]
     },
     {
-      "id": 2,
       "subject": "linux",
-      "description": "check disk space",
-      "command": "df -h"
-    },
-    {
-      "id": 3,
-      "subject": "docker",
-      "description": "list all running containers",
-      "command": "docker ps"
+      "description": "create sudo user",
+      "steps": [
+        {
+          "description": "Create a new user",
+          "command": "adduser <username>"
+        },
+        {
+          "description": "Add the user to the sudo group",
+          "command": "usermod -aG sudo <username>"
+        }
+      ]
     }
   ]
 }
